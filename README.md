@@ -24,3 +24,13 @@ orderBy
 
 1.4版本变化：
   1.$cookieStore将不赞成使用。
+
+  angular.module('myApp', ['ngCookies'])
+    .controller('testCtrl',['$scope','$rootScope',function($scope,$rootScope){
+      $scope.value = "A ";
+    }]);
+  不要写成
+  .controller('testCtrl',[function($scope,$rootScope){
+        $scope.value = "A ";
+      });
+  这会在压缩的时候出现错误。

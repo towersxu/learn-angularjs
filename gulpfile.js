@@ -7,7 +7,7 @@ var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 var ngAnnotate = require('gulp-ng-annotate');
-var imagemin = require('gulp-imagemin');
+
 
 gulp.task('less', function () {
   return gulp.src('./app/less/*.less')
@@ -45,10 +45,10 @@ gulp.task('concat',function(){
 
 
 gulp.task('uglify',function(){
-  return gulp.src('./release/js/*.js')
+  return gulp.src('./app/*.js')
     .pipe(rename({suffix:'.min'}))
     .pipe(uglify({outSourceMap: false}))
-    .pipe(gulp.dest('./release/js'))
+    .pipe(gulp.dest('./app/js'))
 });
 
 gulp.task('ngAnnotate',function(){
@@ -58,6 +58,7 @@ gulp.task('ngAnnotate',function(){
 });
 
 gulp.task('images',function(){
+  var imagemin = require('gulp-imagemin');
   return gulp.src('app/imag/*')
     .pipe(imagemin({optimizationLevel:3,pregressive:true,interlaced:true}))
     .pipe(gulp.dest('release/img'))
