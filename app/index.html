@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>My AngularJS App</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <!--<div ng-view></div>-->
+  <div ng-app="myApp">
+      <div ng-controller="ctrl">
+          <input ng-model="expr" type="text" placeholder="Enter an expression">
+          <h2>{{parseValue}}</h2>
+      </div>
+      <div ng-controller="interCtrl">
+          <input ng-model="to" type="email" placeholder="Recipient">
+          <textarea ng-model="emailBody"></textarea>
+          <pre>{{previewText}}</pre>
+      </div>
+      <p>{{123 | currency}}</p>
+      <p>{{2015 | date:'yyyy'}}</p>
+
+      <div ng-controller="registerCtrl">
+          <form name="register" >
+              姓名：<input type="text" name="name" placeholder="input name">
+          </form>
+      </div>
+
+  </div>
+  <div>Angular seed app: v<span app-version></span></div>
+
+  <script src="bower_components/angular/angular.js"></script>
+  <script src="bower_components/angular-route/angular-route.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
