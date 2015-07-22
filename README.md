@@ -185,6 +185,51 @@ $location
   页面。
   replace() 如果你希望跳转后用户不能点击后退按钮(对于登陆之后的跳转这种)。
 
+angularjs路由模式分为标签模式和HTML5模式，后端服务器也需要支持URL重新，服务器需要确保所有的请求都返回index.html,以支持
+HTML5模式。这样才能确保由angularJS应用来处理路由。
+
+为了在应用的过程中给爬虫提供支持，我们需要在头部添加meta标签。这个元标记会让爬虫请求一个带有空的转义片段参数的链接，
+服务器会根据请求返回对应的HTML代码片段。
+<meta name="fragment" content="!" />
+
+如果我们想要在作用域的生命周期外使用$location服务，必须使用$apply函数将变化抛到应用外部。因为$location服务是基于$digest
+来驱动浏览器的地址变化，以使路由事件正常工作的。
+
+推断式注入声明：AngularJS会假定参数名称就是依赖的名称。
+显示注入声明：通过$inject来实现显示注入声明。aController.$inject = ['$scope','greeter'];
+行内注入声明：.controller("ctrlName",["$scope",function(){}])
+
+$injector API
+annotate() 返回一个由服务名称组成的数组，这些服务会在实例化时被注入到目标函数中。
+get() 参数name 根据名称返回服务的实例。
+has() 参数name 判断注册列表中是否有对应的服务。
+instantiate() 参数构造函数Type locals 返回Type的新实例
+invoke() 调用方法，并从$injector中添加方法参数。
+
+出于内存占用和性能的考虑，控制器只会在需要时被实例化，并且不再需要就会被销毁。这意味着每次切换路由或重新加载视图时,
+当前的控制器会被AngularJS清除掉。
+
+服务提供了一种能在应用整个生命周期内保持数据的方法，它能够在控制器之间进行通信，并且能保证数据的一致性。
+服务是一个单例对象，在每个应用中只会被实例化一次（$inejctor实例化），并且是延迟加载的。服务提供了把与特
+定功能相关联的方法集中在一起的接口。
+
+内置服务$timeout。
+app.controller('ServiceController', function($scope, $timeout, githubService) {
+  // 和上面的示例一样, 添加了$timeout服务
+  var timeout;
+  $scope.$watch('username', function(newUserName) {
+    if (newUserName) {
+      // 如果在进度中有一个超时(timeout)
+      if (timeout) $timeout.cancel(timeout);
+      timeout = $timeout(function() {
+      githubService.events(newUserName)
+      .success(function(data, status) {
+      $scope.events = data.data;
+      });
+      }, 350);
+    }
+  });
+});
 
 1.4版本变化：
   1.$cookieStore将不赞成使用。
