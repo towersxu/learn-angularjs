@@ -20,7 +20,164 @@ number
 orderBy
 
 
+ng-disabled 可以绑定到input textarea select button上
+  <input type="checkbox" ng-checked="someProperty" ng-init="someProperty = true" ng-model="someProperty">
+
 使用模式匹配控制表单输入 <input type="text" ng-pattern="[a-zA-Z]">
+
+ng-switch
+          <div ng-switch on="person.name">
+              <p ng-switch-default>And the winner is {{person.name}}</p>
+              <h1 ng-switch-when="Ari">{{person.name}}</h1>
+          </div>
+          可以在propertyName发生变化时渲染不同指令到视图。当person.name是Ari时，文本域下面的div会显示出来。
+
+ng-if同ng-show和ng-hide指令最本质的区别时，它不是通过CSS显示或隐藏DOM节点，而是真正生成或移除节点。
+
+ng-init 设置作用域的初始状态，最好不用，一般都在controller中设置。
+
+{{}} 在内部$scope和视图之间创建绑定。 注意，在屏幕可视的区域内使用会导致页面加载时未渲染的元素发生闪烁，用ng-bind可以避免这个问题。
+      <div ng-init="greeting='Hello'">
+          <p ng-bind="greeting"></p>
+      </div>
+
+ng-repeat
+  $index:遍历的进度 （0 ... length-1）
+  $first:当元素时遍历的第一个时值为true
+  $middle:
+  $last:
+  $even:
+  $odd:
+
+ng-model 用来将input、select、textarea或自定义表单控件同包含它们的作用域中的属性进行绑定。它可以提供并处理表单验证功能，
+在元素上设置相关的CSS类，并负责在父表单中注册控件。它将当前作用域中运算表达式的值同给定的元素进行绑定。如果属性不存在，它会
+隐式创建并将其添加到当前作用域中。我们应该始终用ngModel来绑定$scope上一个数据模型的属性，而不是$scope上的属性。这可以避免
+在作用域或后代作用域中发生属性覆盖。
+
+ng-attr-(suffix) 有时浏览器会对属性进行苛刻的限制。SVG就是一个例子：
+  <svg>
+    <circle cx="{{ cx }}"></circle>
+  </svg>
+  运行上面的代码会抛出一个错误，指出我们有一个非法属性。使用ng-attr-cx来解决这个问题。
+  <svg>
+    <circle ng-attr-cx = "{{cx}}"></circle>
+  </svg>
+
+自定义指令最好有前缀。但不要使用ng
+指令参数
+  1）termial boolean 如果元素上某个指令设置了terminal参数并具有较高的优先级，就不要再用其他低优先级的指令对其进行修饰，因为不会
+  被调用。但是具有相同优先级的指令还是会被继续调用。例如ngView和ngIf,ngIf的优先级略高于ngView,如果ngIf的表达式值为false,由于
+  ngView的优先级较低就不会被执行。
+  2）templateUrl 模板的URL将通过AngularJS内置的安全层，特别是$getTrustedResourceUrl，这样可以保护模板不会被不信任的源加载。
+  模板加载是通过Ajax异步加载的，意味着编译和链接要暂停，等待模板加载完成。加载大量的模板将严重拖慢一个客户端应用的速度。为了避免
+  延迟，可以在部署应用之前对HTML模板进行缓存。模板加载后，AngularJS会将它默认缓存到$templateCache服务中。在实际生产中，可以提前
+  将模板缓存到一个定义模板的js文件中，这样就不需要通过XHR来加载模板了。
+  3）scope参数是可选的，默认false，设置为true时，会从父作用域继承并创建一个新的作用域。
+  4）隔离作用域，主要使用在创建可复用的组件，组件可以在未知上下文中使用，并且可以避免污染所处的外部作用域或不经意地污染内部作用域。
+  创建具有隔离作用域的指令需要将scope属性设置为一个空对象{}。如果这样做了，指令就无法访问外部作用域了。
+  5)controller参数可以是一个字符串或一个函数。
+    controller:function($scope,$element,$attrs,$transclude){
+      $scope：与指令元素相关联的当前作用域。
+      $element:当前指令对应的元素。
+      $attrs:由当前元素的属性组成的对象。
+      $transclude:嵌入链接函数与对应的嵌入作用域进行预绑定。transclude链接函数是实际被执行用来克隆元素和操作DOM的函数。
+      在控制器内部操作DOM是和AngularJS风格相悖的做法，但通过链接函数就可以实现这个需求。仅在compile参数中使用transcludeFn是
+      推荐的做法。
+      例如，想要通过指令来添加一个超链接标签。可以在指令控制器内的$transclude函数中实现，如下：
+      angular.module('myApp', ['ngCookies'])
+        .directive('link',function(){
+          return {
+            restrict:'EA',
+            transclude:true,
+            controller:function($scope,$element,$transclude,$log){
+              $transclude(function(clone){
+                console.log(clone);
+                var a =angular.element('<a>');
+                a.attr('href',clone.text());
+                a.text(clone.text());
+                $log.info("Created new a tag in link directive");
+                $element.append(a);
+              });
+            }
+          }
+        });
+      link函数可以将指令互相隔离开来，而controller则定义可复用的行为。
+      如果我们希望将当前指令的API暴露给其他指令使用，可以使用controller参数，否则可以使用link来构造当前指令元素的功能性。如果我们
+      使用了scope.$watch()或者想要与DOM元素做实时的交互，使用link会是更好的选择。因为在使用了嵌入，控制器中的作用域所反映的作用域
+      可能与我们所期望的不一样，这种情况下，$scope对象无法保证可以被正常更新。
+    6)require 参数可以是字符串或数组，字符串代表另一个指令的名字。require会将控制器注入到其值所指定的指令中，并作为当前指令的链接
+    函数的第四个参数。
+      前缀：
+      ?:如果在当前指令中没有找到所需找到所需要的控制器，会将null作为传给link函数的第四个参数
+      ^:指令会在上游指令链中查找require参数所指定的控制器。
+      ？^:我们可选择地加载需要的指令并在父指令链中进行查找。
+      如果不使用^前缀，指令只会在自身的元素上查找控制器。
+      require：'ngModel'  //指令定义只会查找定义在指令当前作用域中的ng-model=""
+    7）compile 通常情况下，如果设置了compile函数，说明我们希望在指令和实时数据被放在DOM之前进行DOM操作，在这个函数中进行诸如添加和
+    删除节点等DOM是安全的。
+    注意：compile和link选项是互斥的，同时设置会把compile所返回的函数当作链接函数，而link选项本身则会被忽略。
+    编译函数负责对模板DOM进行转换。
+    链接函数负责将作用域和DOM进行链接。在作用域同DOM链接之前可以手动操作DOM。在实践中，编写自定义指令时这种操作是非常罕见的，但有几个
+    内置i指令提供了这样的功能。
+    8）link 链接 用link函数创建可以操作DOM的指令。链接函数是可选的，如果定义了编译函数，它回返回链接函数，因此当两个函数都定义了时，
+    编译函数会重载链接函数。如果指令很简单，并且不需要额外设置，可以从工厂函数返回一个函数来代替对象。如果这样做了，这个函数就是链接
+    函数。
+    链接函数的作用：它会在模板编译并同作用域进行链接后被调用，因此它负责设置事件监听器，监听数据变化和实时的操作DOM。
+    link函数对绑定了实时数据的DOM具有控制能力，因此需要考虑性能问题。这个时候需要考虑是使用编译函数还是链接函数实现功能。
+    link:function(scope,element,attrs){}
+    如果指令定义中有require选项，link函数会有第四个参数，代表控制器或者所依赖的指令的控制器。
+    如果require选项提供了一个指令数组，第四个参数会是一个由每个指令所对应的控制器组成的数组。
+    link 参数：
+      scope 指令用来在其内部注册监听器的作用域。
+      element 使用此指令的元素。在postLink函数中我们应该只操作此元素的子元素，因为子元素已经被链接过了。
+      attrs 实例属性，是一个由定义在元素上的属性组成的标准化列表，可以在所有指令的链接函数间共享。会以对象形式进行传递。
+      controller 该参数指向require选项定义的控制器。如果没有设置require选项，那么controller为undefined，控制器在所有的指令间
+      共享，因此指令可以将控制器当作通信通道(公共API)。如果设置了多个require，那么这个参数会是一个由控制器实例组成的数组，而不只是
+      一个单独的控制器。
+    9）ngModel 用法特殊的指令，它提供更底层的API来处理控制器内的数据。
+    在指令中使用ngModel时能够访问一个特殊的API，这个API用来处理数据绑定、验证、CSS更新等不实际操作DOM的事情。
+    ngModel控制器会随着ngModel被一直注入到指令中，使用方法如下：
+      angular.module('myApp', ['ngCookies'])
+        .directive('ensureUnique',function(){
+          return {
+            require:'ngModel',
+            link:function(scope,ele,attrs,ngModel){
+              if(!ngModel) return;
+              scope.watch(attrs.ngModel,function(){
+
+              })
+            }
+          }
+        });
+      注意1：这种指令只能用于标签含有ng-model属性的标签
+      注意2：这个指令没有隔离作用域。如果给这个指令设置隔离作用域，将导致内部ngModel无法更新外部ngModel的对应值：AngularJS会在本地
+            作用域以外查询值。
+
+模块加载
+  对模块进行配置时，需要格外注意只有少数几种类型的对象可以被注入到config()函数中：提供者和常量。如果将一个服务注入进去，会在真正对
+  其进行配置之前就意外地把服务实例化了。所以，我们只能用provider()语法构建的服务。
+  config()代码块可以对服务进行自定义配置，例如设置API秘钥或自定义URL等。
+
+ngView指令遵守以下规则。
+  每次触发$routeChangeSuccess事件，视图都会更新。
+  如果某个模板同当前的路由相关联：
+    创建一个新的作用域；
+    移除上一个视图，同时上一个作用域也会被清除；
+    将新的作用域同当前模板关联在一起；
+    如果路由中有相关的定义，那么就把对应的控制器同当前作用域关联起来；
+    触发$viewContentLoaded事件；
+    如果提供了onload属性，调用该属性所指定的函数。
+
+路由
+  reloadOnSearch 默认true，当$location.search()发生变化时会重新加载路由。如果设置为false，那么当URL中的查询串部分发生变化时
+  就不会重新加载路由。这个小窍门对路由嵌套和原地分页等需求非常有用。
+
+$location
+  path() 修改当前路径，并跳转到应用中的另一个URL，该方法直接和HTML5的历史API进行交互，所以用户可以通过点击后退按钮退回到上一个
+  页面。
+  replace() 如果你希望跳转后用户不能点击后退按钮(对于登陆之后的跳转这种)。
+
+
 
 1.4版本变化：
   1.$cookieStore将不赞成使用。
@@ -30,7 +187,7 @@ orderBy
       $scope.value = "A ";
     }]);
   不要写成
-  .controller('testCtrl',[function($scope,$rootScope){
+  .controller('testCtrl',function($scope,$rootScope){
         $scope.value = "A ";
       });
   这会在压缩的时候出现错误。

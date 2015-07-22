@@ -10,15 +10,12 @@
 <body>
   <!--<div ng-view></div>-->
   <div ng-app="myApp">
-      <div ng-controller="testCtrl">
-          <p>{{value}}shi zuo</p>
-      </div>
+      <div ng-controller="urlCtrl"></div>
+      <input  type="text" name="username" ng-model="signup.username" value="s" ensure-unique="username" required>
   </div>
-  <div>Angular seed app: v<span app-version></span></div>
-
   <script src="bower_components/angular/angular.js"></script>
   <script src="bower_components/angular-route/angular-route.js"></script>
   <script src="bower_components/angular-cookies/angular-cookies.js"></script>
-  <script src="js/app.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
