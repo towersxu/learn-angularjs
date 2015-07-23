@@ -290,7 +290,7 @@ capacity: 20
 AngularJS通过拦截器提供了一个从全局层面对响应进行处理的途径。
 拦截器是$http服务的基础中间件，用来向应用的业务流程中注入新的逻辑。
 拦截器的核心是服务工厂，通过向$httpProvider.interceptors数组中添加服务工厂，在$httpProvider中进行注册。
-...javascript
+```javascript
 //调用模块的.factory()方法来创建拦截器，可以在服务中添加一种或多种拦截器：
 angular.module('myApp', [])
     .factory('myInterceptor', function($q) {
@@ -323,7 +323,7 @@ angular.module('myApp', [])
     .config(function($httpProvider) {
       $httpProvider.interceptors.push('myInterceptor');
     });
-...
+```
 1.4版本变化：
   1.$cookieStore将不赞成使用。
 
