@@ -324,6 +324,122 @@ angular.module('myApp', [])
       $httpProvider.interceptors.push('myInterceptor');
     });
 ```
+使用.config()可以向所有请求中添加特定的HTTP头
+```javascript
+angular.module('myApp', [])
+.config(function($httpProvider) {
+$httpProvider.defaults.headers
+.common['X-Requested-By'] = 'MyAngularApp';
+});
+```
+也可以在运行时通过$http对象的defaults属性对这些默认值进行修改。
+```javascript
+$http.defaults.common['X-Auth'] = 'RandomString';
+```
+也可以只对POST和PUT类型的请求进行设置。 POST请求的默认头如下所示：
+```javascript
+angular.module('myApp', [])
+.config(function($httpProvider) {
+  $httpProvider.defaults.headers.post['X-Posted-By'] = 'MyAngularApp';
+});
+```
+
+Restangular 一种特别优秀的resource和$http替代方案。
+强烈建议将Restangular封装在一个自定义服务对象内。这样做非常有用，因为在每个
+自定义服务中都可以对Restangular进行独立的设置。通过使用服务可以将同服务器通信的逻辑与
+AngularJS对象解耦，并让服务直接处理通信的业务。
+```javascript
+angular.module('myApp', ['restangular'])
+.factory('MessageService', ['Restangular', function(Restangular) {
+  var restAngular = Restangular.withConfig(function(Configurer) {
+    Configurer.setBaseUrl('/api/v2/messages');
+  });
+  var _messageService = restAngular.all('messages');
+  return {
+    getMessages: function() {
+      return _messageService.getList();
+    }
+  };
+}]);
+```
+
+angular客户端权限认证系统。
+```javascript
+angular.module('myApp', ['ngRoute'])
+.constant('ACCESS_LEVELS', {
+  pub: 1,
+  user: 2
+});
+
+angular.module('myApp', ['ngRoute'])
+.config(function($routeProvider, ACCESS_LEVELS) {
+  $routeProvider
+  .when('/', {
+    controller: 'MainController',
+    templateUrl: 'views/main.html',
+    access_level: ACCESS_LEVELS.pub
+  })
+  .when('/account', {
+    controller: 'AccountController',
+    templateUrl: 'views/account.html',
+    access_level: ACCESS_LEVELS.user
+  })
+  .otherwise({
+    redirectTo: '/'
+  });
+});
+
+angular.module('myApp.services', [])
+.factory('Auth', function($cookieStore,ACCESS_LEVELS) {
+  var _user = $cookieStore.get('user');
+  var setUser = function(user) {
+    if (!user.role || user.role < 0) {
+    user.role = ACCESS_LEVELS.pub;
+    }
+    _user = user;
+    $cookieStore.put('user', _user);
+  };
+  return {
+    isAuthorized: function(lvl) {
+      return _user.role >= lvl;
+    },
+    setUser: setUser,
+    isLoggedIn: function() {
+      return _user ? true : false;
+    },
+    getUser: function() {
+      return _user;
+    },
+    getId: function() {
+      return _user ? _user._id : null;
+    },
+    getToken: function() {
+      return _user ? _user.token : '';
+    },
+    logout: function() {
+      $cookieStore.remove('user');
+      _user = null; 
+    }
+  };
+});
+
+
+angular.module('myApp', [])
+.run(function($rootScope, $location, Auth) {
+  // 给$routeChangeStart设置监听
+  $rootScope.$on('$routeChangeStart', function(evt, next, curr) {
+    if (!Auth.isAuthorized(next.$$route.access_level)) {
+      if (Auth.isLoggedIn()) {
+        // 用户登录了，但没有访问当前视图的权限
+        $location.path('/');
+      } else {
+        $location.path('/login');
+      }
+    }
+  });
+});
+```
+
 1.4版本变化：
   1.$cookieStore将不赞成使用。
 
