@@ -231,6 +231,99 @@ app.controller('ServiceController', function($scope, $timeout, githubService) {
   });
 });
 
+所有的服务都是由$provide服务创建的，$provide服务负责在运行时初始化这些提供者。
+提供者是一个具有$get()方法的对象，$injector通过调用$get方法创建服务实例。$provide提供了数个不同的API
+用于创建服务，每个方法都有各自的特殊用途。
+所有创建服务的方法都构建在provider方法之上。provider()方法负责在$providerCache中注册服务。
+factory()函数是provider使用$get()注册服务的略简形式。
+
+如果希望在config()函数中可以对服务进行配置。必须用provider()来定义服务。
+用这个方法创建服务，必须返回一个定义有$get()函数的对象，否则会导致错误。
+.provider()是非常强大的，可以让我们在不同的应用中共享服务。
+如果服务的$get方法返回的是一个常量，那就没要必要定义一个包含复杂功能的完整服务，
+可以通过value()函数方便地注册服务。
+
+可以将一个已经存在的变量值注册为服务，并将其注入到应用的其他部分当中。例如，假设
+我们需要给后端服务一个apiKey，可以用constant()将其当作常量保存下来。这个常量不能被装饰器拦截。
+value()方法和constant()方法之间最主要的区别是， 常量可以注入到配置函数中，而值不行。
+通常情况下，可以通过value()来注册服务对象或函数，用constant()来配置数据。
+
+decorator() $provide服务提供了在服务实例创建时对其进行拦截的功能，可以对服务进行扩展，或者用
+另外的内容完全代替它。AngularJS中很多功能的测试就是借助$provide.decorator()建立的。
+对服务进行装饰的场景有很多，比如对服务进行扩展，将外部数据缓存进localStorage的功能，
+或者对服务进行封装以便在开发中进行调试和跟踪等。
+
+我们可以调用HttpPromise对象上的then()、 success()和error()方法。 then()方法与其
+他两种方法的主要区别是，它会接收到完整的响应对象，而success()和error()则会对响应对
+象进行析构。
+
+$http
+ params（字符串map或对象）
+这个键的值是一个字符串map或对象，会被转换成查询字符串追加在URL后面。如果值不是
+字符串，会被JSON序列化。
+// 参数会转化为?name=ari的形式
+$http({
+params: {'name': 'ari'}
+})
+
+data（字符串或对象）
+这个对象中包含了将会被当作消息体发送给服务器的数据。通常在发送POST请求时使用。
+从AngularJS 1.3开始，它还可以在POST请求里发送二进制数据。要发送一个blob对象，你
+可以简单地通过使用data参数来传递它。例如：
+var blob = new Blob(['Hello World'], {type: 'text/plain'});
+$http({
+method: 'POST',
+url: '/',
+data: blob
+});
+
+每次发送请求时都传入一个自定义缓存是很麻烦的事情（即使是在服务中）。可以通过应用
+的.config()函数给所有$http请求设置一个默认的缓存：
+angular.module('myApp', [])
+.config(function($httpProvider, $cacheFactory) {
+$httpProvider.defaults.cache = $cacheFactory('lru', {
+capacity: 20
+});
+});
+现在，所有的请求都会使用我们自定义的LRU缓存了。
+
+AngularJS通过拦截器提供了一个从全局层面对响应进行处理的途径。
+拦截器是$http服务的基础中间件，用来向应用的业务流程中注入新的逻辑。
+拦截器的核心是服务工厂，通过向$httpProvider.interceptors数组中添加服务工厂，在$httpProvider中进行注册。
+...javascript
+//调用模块的.factory()方法来创建拦截器，可以在服务中添加一种或多种拦截器：
+angular.module('myApp', [])
+    .factory('myInterceptor', function($q) {
+      var interceptor = {
+        'request': function(config) {
+        // 成功的请求方法
+          return config; // 或者 $q.when(config);
+        },
+        'response': function(response) {
+        // 响应成功
+          return response; // 或者 $q.when(config);
+        },
+        'requestError': function(rejection) {
+          // 请求发生了错误，如果能从错误中恢复，可以返回一个新的请求或promise
+          return response; // 或新的promise
+          // 或者，可以通过返回一个rejection来阻止下一步
+          // return $q.reject(rejection);
+        },
+        'responseError': function(rejection) {
+          // 请求发生了错误，如果能从错误中恢复，可以返回一个新的响应或promise
+          return rejection; // 或新的promise
+          // 或者，可以通过返回一个rejection来阻止下一步
+          // return $q.reject(rejection);
+        }
+      };
+      return interceptor;
+    });
+//我们需要使用$httpProvider在.config()函数中注册拦截器：
+angular.module('myApp', [])
+    .config(function($httpProvider) {
+      $httpProvider.interceptors.push('myInterceptor');
+    });
+...
 1.4版本变化：
   1.$cookieStore将不赞成使用。
 
