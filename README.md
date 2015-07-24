@@ -454,10 +454,46 @@ scope.$broadcast('cart:checking_out',scope.cart);
 scope.$on('$routeChangeStart',function(evt,next,current){});
 ```
 核心系统的$emitted事件
-可以使用$on在任意作用域里监听这些方法。
-*  **$includeContentLoaded**
-  $includeContentLoaded事件当ngInclude的内容重新加载时，从ngInclude指令上触发。
-1.4版本变化：
+* 可以使用$on在任意作用域里监听这些方法。
+*  **$includeContentLoaded**事件当ngInclude的内容重新加载时，从ngInclude指令上触发。
+*  **$includeContentRequested**事件从调用ngInclude的作用域上发送。每次ngInclude
+  的内容被请求时,它都会被发送。
+*  **$viewContentLoaded**事件每当ngView内容被重新加载时，从当前ngView作用域上发送。
+系统核心事件的$broadcast事件
+*  **$locationChangeStart**  当Angular从$location服务(通过$location.path()、$location.search()等)
+对浏览器的地址更新时，会触发$locationChangeStart事件。
+*  **$locationChangeSuccess** 当且仅当浏览器地址成功变更，又没有阻止$locationChangeStart事件
+的情况下，$locationChangeSuccess事件会从$rootScope上广播下来。
+*  **$routeChangeStart** 在路由变更发生之前，$routeChangeStart事件从$rootScope发送出来。也就是
+在路由服务开始解析路由变更所需要的所有依赖项时。
+*  **$routeChangeSuccess** 在所有路由依赖项跟着$routeChangeStart被解析之后，$routeChangeSuccess
+被从$rootScope上广播出来。neView指令使用$routeChangeSuccess事件来获悉何时实例化控制器并渲染视图。
+* **$routeChangeError** 如果路由对象上任意的resolve属性被拒绝了，$routeChangeError就会被触发。
+这个事件会从$rootScope上广播出来的。
+* **$routeUpdate** 如果$routeProvider上的reloadOnSearch属性被设置成false，并且使用了控制器的同一个实例，
+$routeUpdate事件会被从$rootScope上广播出来。
+* **$destroy** 在作用域被销毁之前，$destroy事件会在作用域上广播。这个顺序给子作用域一个机会，在父作用域
+被真正移除之前清理自身。
+```javascript
+//例如我们在控制器中有一个正在运行的$timeout，我们不希望在包含它的控制器已经
+//不存在的情况下，它还继续触发。
+angular.module('myApp',[])
+  .controller('MainCtrl',function($scope,$timeout){
+    var timer;
+    var updateTime = function(){
+      $scope.date = new Date();
+      timer = $timeout(updateTime,1000);
+    }
+    timer = $timeout(updateTime,1000);
+    $scope.$on('$destroy',function(){
+      it(timer){
+        $timeout.cancel(timer);
+      }
+    });
+  })
+```
+
+##1.4版本变化：
   1.$cookieStore将不赞成使用。
 
   angular.module('myApp', ['ngCookies'])
