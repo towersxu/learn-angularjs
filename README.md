@@ -440,6 +440,23 @@ angular.module('myApp', [])
 });
 ```
 
+##事件
+* $emit冒泡事件
+```javascript
+scope.$emit('user:logined_in',scope.user)
+```
+* $broadcast 向下传递事件。
+```javascript
+scope.$broadcast('cart:checking_out',scope.cart);
+```
+* 监听事件
+```javascript
+scope.$on('$routeChangeStart',function(evt,next,current){});
+```
+* 核心系统的$emitted事件
+可以使用$on在任意作用域里监听这些方法。
+  **$includeContentLoaded**
+  $includeContentLoaded事件当ngInclude的内容重新加载时，从ngInclude指令上触发。
 1.4版本变化：
   1.$cookieStore将不赞成使用。
 
