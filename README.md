@@ -572,6 +572,60 @@ Angular的事件循环被称作$digest循环。这个$digest循环由两个小�
   以确保没有东西被改变。一旦$digest循环稳定下来，并且检测到没有潜在的变化了，执行过程就会离开Angular上下
   文并且通常会回到浏览器中， DOM将会被渲染到这里。
 
+##缓存
+* **LRU 缓存** 
+```javascript
+var lruCache = $cacheFactory('lruCache',{ capacity : 10 });  
+
+$http.get('/foo/bar/' + itemId, { cache: lruCache })
+  .success(function (data) {
+    data; // { foo: 'bar' }
+  })
+  .error(function (data, status, headers, config) {
+    // 一些错误处理代码  
+  });   
+```
+每个针对/foo/bar/:itemId请求的响应都会被缓存，但是在上面的代码中缓存次数只有十次。
+当发送第十一次请求时，最早一次的缓存会从缓存中被移除。
+这里的缓存按顺序包含着一个项目列表以便它在进行一次新的请求时知道应该移除哪一个旧的缓存项目。
+
+```javascript
+$httpProvider.defaults.cache = $cacheFactory('myNewDefaultCache',{capacity: 100 });
+```
+* **高级缓存**
+angular-cache:angular-cache is a very useful replacement for Angular's $cacheFactory.
+
+##安全性
+* **$sce**是一个非常出色的服务，它允许我们编写白名单，默认保护代码，并在很大程度上帮助
+我们防止XSS和其他漏洞。
+指令会在幕后调用$sce.parseAsHtml()方法，然后将返回值绑定给
+DOM元素。
+从Angular 1.2及更高版本的内置指令开始， $scope中的值就不再是绑定给它的值了，
+而是绑定$sce.getTrusted()方法的返回结果。
+```javascript
+//在下面的指令和控制器内，我们希望Angular能够允许受信任的内容回到视图内，同时接受可信任的插值输入。
+angular.module('myApp', [])
+.directive('myDirective', ['$sce', function($sce) {
+// 这里有权使用$sce服务
+}])
+.controller('MyController', ['$scope', '$sce', function($scope, $sce) {
+// 这里也有权使用$sce服务
+}]);
+```
+* **URL 白名单** 在模块的config()函数内可以设置新的白名单和黑名单。
+```javascript
+angular.module('myApp', [])
+.config(['$sceDelegateProvider', function($sceDelegateProvider) {
+// 设置一个新的白名单
+$sceDelegateProvider.resourceUrlWhitelist(['self']);
+}]);
+```
+每个数组元素必须是一个正则表达式或者是字符串'self'。当设置为'self'时， Angular会
+确保所有的URL都只匹配与应用所在域一致的URL。使用一个正则表达式时， Angular会匹配与
+测试资源对应的绝对URL。
+如果这个数组为空， $sce会阻塞所有的URL。
+可以使用resourceUrlBlacklist()方法设置新的黑名单。
+
 ##1.4版本变化：
   1.$cookieStore将不赞成使用。
 
