@@ -493,6 +493,85 @@ angular.module('myApp',[])
   })
 ```
 
+##digest和$apply
+永远不要在控制器中使用$watch,因为它会使控制器难以测试。
+
+* **$watchCollection** 为对象的属性或者数组的元素设置浅监控，只有属性发生变化就触发监听器回调。
+使用$watchCollection还可以检测对象或数组何时发生变化，以便确定对象或数组中的条目是何时添加、移除或者移动的。
+
+* **$evalAsync** 是一种在当前作用域上调度表达式在未来某个时刻运行的方式。无论何时，在Angular中，只要你想
+在一个行为的执行上下文外部执行另一个行为，就应该使用$evalAsync()函数。
+
+* **$apply** 使用$scope.$apply()时可以从外部进入上下文。所有ng-[event]指令
+（比如ng-click、 ng-keypress）都会调用$apply()。无论何时我们手动处理事件，使用第三方框架（比如jQuery、 Facebook API）
+ ，或者调用setTimeout()，都可以使用$apply()函数让Angular返回$digest循环。一般不建议在控制器中使用$apply()，
+ 因为这样会导致难以测试，而且如果不得不在控制器中使用$apply()或者$digest()，很可能让事情变得更加难以理解。
+
+在这里，我们构建了一个简单的指令（第10章深入探索了如何构建指令），指令中我们在元
+素上使用了datepicker这个jQuery插件方法。
+datepicker插件暴露了一个onSelect事件，这个事件会在用户选择日期时触发。为了在
+Angular应用内部获取用户选择的日期，我们需要在$apply()函数内运行datepicker的回调函数。
+```javascript
+app.directive('myDatepicker', function() {
+  return function(scope, ele, attrs, ctrl) {
+    $(function() {
+      // 在元素上调用datepicker方法
+      ele.datepicker({
+        dateFormat: 'mm/dd/yy',
+        onSelect: function(date) {
+          scope.$apply(function() {
+            ctrl.$setViewValue(date);
+          });
+        }
+      });
+    });
+  }
+});
+```
+
+##angular原理
+
+* **加载** 当浏览器触发DOMContentLoaded事件时， Angular就开始工作。它首先寻找ng-app指令
+如果浏览器在DOM中找到ng-app指令，它会为我们自动启动应用。如果没有找到这个指令，Angular
+期望我们自己手动启动应用。
+要手动启动一个AngularJS应用，可以使用Angular的bootstrap()方法。要在某个其他库的代码运行之后，
+或者在运行时动态创建元素时，可以手动动AngularJS应用。
+```javascript
+var newElement = document.createElement("div");
+angular.bootstrap(newElement, ['myApp']);
+```
+Angular会使用ng-app指令的值配置$injector服务
+一旦应用程序加载完成， $injector就会在应用程序的$rootScope旁边创建$compile服务。
+$rootScope创建后， $compile服务就会接管它。 它会将$rootScope与现有的DOM连接起来，
+然后从将ng-app指令设置为祖先的地方开始编译DOM。
+
+* **编译阶段** $compile服务会遍历DOM树并搜集它找到的所有指令，然后将所有这些指令的链接函数合
+并为一个单一的链接函数。然后这个链接函数会将编译好的模板链接到$rootScope中（也就是附属于ng-app所在的
+DOM元素的作用域）。
+$compile服务通过遍历DOM树的方式查找有声明指令的DOM元素。当碰到带有一个或多个
+指令的DOM元素时，它会排序这些指令（基于指令的priority优先级），然后使用$injector服
+务查找和收集指令的compile函数并执行它。
+指令中的compile函数会在适当的时候处理所有DOM转换或者内联模板，如同创建模板的
+副本。
+每个节点的编译方法运行之后， $compile服务就会调用链接函数。这个链接函数为绑定了封
+闭作用域的指令设置监控。这一行为会创建实时视图。
+最后，在$compile服务完成后， AngularJS运行时就准备好了。
+
+* **运行时** 
+在标准的浏览器流程中，事件循环会等待事件执行（比如鼠标移动、点击、按键等）。当这
+些事件发生时，它们会被放到浏览器的事件队列中。
+Angular中对事件循环做了一点增强，并且Angular还提供了自己的事件循环。指令自身会注
+册事件监听器，因此当事件被触发时，指令函数就会运行在AngularJS的$digest循环中。
+Angular的事件循环被称作$digest循环。这个$digest循环由两个小型的循环组
+成，分别是evalAsync循环和$watch列表。
+* $evalAsync用于在浏览器进行渲染之前，调度需要运行在当前桢栈（stack frame）
+之外的所有任务。
+* $digest循环还会等待$watch表达式列表，它是一个可能在上一次迭代过程中被改变
+  的潜在的表达式数组。如果检测到变化，就调用$watch函数，然后再次查看$watch列表以确保
+  没有东西被改变。注意，对于$watch列表中检测到的任何变化， AngularJS都会再次查看这个列表
+  以确保没有东西被改变。一旦$digest循环稳定下来，并且检测到没有潜在的变化了，执行过程就会离开Angular上下
+  文并且通常会回到浏览器中， DOM将会被渲染到这里。
+
 ##1.4版本变化：
   1.$cookieStore将不赞成使用。
 
